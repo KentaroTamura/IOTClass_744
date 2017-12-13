@@ -1,0 +1,61 @@
+// https://go.particle.io/shared_apps/5a3094e431ef4478a6000e53
+
+// Motion Detector for SEIS744 - IoT Class, Fall 2017
+// Credit to Anton, updated by Ken
+
+int inputPin = D0;              // the input pin for the PIR Sensor (aligned to the OUT on sensor)
+int ledPin = D7;                // LED to signal an event has occurred
+int pirState = LOW;             // starting place , assuming no motion detected
+int val = 0;                    // variable for reading the pin status
+
+int calibrateTime = 5000;      
+
+void setup() {
+    pinMode(ledPin, OUTPUT);
+    pinMode(inputPin, INPUT);     // declaring the sensor as input
+}
+
+void loop() {
+
+   // if the sensor is calibrated
+  if (calibrated()) {
+  // get the data from the sensor
+    readTheSensor();
+  // report if the state has changed
+    reportTheData();
+    }
+}
+
+void readTheSensor() {
+    val = digitalRead(inputPin);
+}
+
+bool calibrated() {
+    return millis() - calibrateTime > 0;
+}
+
+void setLED(int state) {
+    digitalWrite(ledPin, state);
+}
+
+void reportTheData() {
+    if (val == HIGH) {
+        // the current state is no motion
+        // publish an event if change occurs
+        if (pirState == LOW) {
+          // we have just turned on
+          Particle.publish("Oh Snap!", "Motion Detected", PRIVATE);
+          // Update the current state
+          pirState = HIGH;
+          setLED(pirState);
+        }
+    } else {
+        if (pirState == HIGH) {
+          // we have just turned back off
+          // Update the current state
+          Particle.publish("Oh Snap!", "Off", PRIVATE);
+          pirState = LOW;
+          setLED(pirState);
+        }
+    }
+}
